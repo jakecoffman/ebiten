@@ -161,7 +161,7 @@ func (i *Image) ReplacePixels(pixels []byte, x, y, width, height int) {
 // DrawImage draws a given image img to the image.
 func (i *Image) DrawImage(img *Image, sx0, sy0, sx1, sy1 int, geom *affine.GeoM, colorm *affine.ColorM, mode opengl.CompositeMode, filter graphics.Filter) {
 	w, h := img.Size()
-	vs := vertices(w, h, sx0, sy0, sx1, sy1, geom)
+	vs := vertices(w, h, sx0, sy0, sx1, sy1, geom, colorm)
 	if vs == nil {
 		return
 	}

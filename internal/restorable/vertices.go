@@ -43,7 +43,7 @@ func (v *verticesBackend) get() []float32 {
 	return s
 }
 
-func vertices(width, height int, sx0, sy0, sx1, sy1 int, geo *affine.GeoM) []float32 {
+func vertices(width, height int, sx0, sy0, sx1, sy1 int, geo *affine.GeoM, color *affine.ColorM) []float32 {
 	if sx0 >= sx1 || sy0 >= sy1 {
 		return nil
 	}
@@ -71,6 +71,7 @@ func vertices(width, height int, sx0, sy0, sx1, sy1 int, geo *affine.GeoM) []flo
 	u0, v0, u1, v1 := float32(sx0)/wf, float32(sy0)/hf, float32(sx1)/wf, float32(sy1)/hf
 
 	x, y := geo.Apply32(x0, y0)
+	cBody, cTranslate := color.UnsafeElements()
 	// Vertex coordinates
 	vs[0] = x
 	vs[1] = y
@@ -82,31 +83,39 @@ func vertices(width, height int, sx0, sy0, sx1, sy1 int, geo *affine.GeoM) []flo
 	vs[3] = v0
 	vs[4] = u1
 	vs[5] = v1
+	copy(vs[6:22], cBody)
+	copy(vs[22:26], cTranslate)
 
 	// and the same for the other three coordinates
 	x, y = geo.Apply32(x1, y0)
-	vs[6] = x
-	vs[7] = y
-	vs[8] = u1
-	vs[9] = v0
-	vs[10] = u0
-	vs[11] = v1
+	vs[26] = x
+	vs[27] = y
+	vs[28] = u1
+	vs[29] = v0
+	vs[30] = u0
+	vs[31] = v1
+	copy(vs[32:48], cBody)
+	copy(vs[48:52], cTranslate)
 
 	x, y = geo.Apply32(x0, y1)
-	vs[12] = x
-	vs[13] = y
-	vs[14] = u0
-	vs[15] = v1
-	vs[16] = u1
-	vs[17] = v0
+	vs[52] = x
+	vs[53] = y
+	vs[54] = u0
+	vs[55] = v1
+	vs[56] = u1
+	vs[57] = v0
+	copy(vs[58:74], cBody)
+	copy(vs[74:78], cTranslate)
 
 	x, y = geo.Apply32(x1, y1)
-	vs[18] = x
-	vs[19] = y
-	vs[20] = u1
-	vs[21] = v1
-	vs[22] = u0
-	vs[23] = v0
+	vs[78] = x
+	vs[79] = y
+	vs[80] = u1
+	vs[81] = v1
+	vs[82] = u0
+	vs[83] = v0
+	copy(vs[84:100], cBody)
+	copy(vs[100:104], cTranslate)
 
 	return vs
 }
