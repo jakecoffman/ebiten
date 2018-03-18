@@ -29,18 +29,14 @@ import (
 type drawImageHistoryItem struct {
 	image    *Image
 	vertices [][]float32
-	colorm   *affine.ColorM
 	mode     opengl.CompositeMode
 	filter   graphics.Filter
 }
 
 // canMerge returns a boolean value indicating whether the drawImageHistoryItem d
 // can be merged with the given conditions.
-func (d *drawImageHistoryItem) canMerge(image *Image, colorm *affine.ColorM, mode opengl.CompositeMode, filter graphics.Filter) bool {
+func (d *drawImageHistoryItem) canMerge(image *Image, mode opengl.CompositeMode, filter graphics.Filter) bool {
 	if d.image != image {
-		return false
-	}
-	if !d.colorm.Equals(colorm) {
 		return false
 	}
 	if d.mode != mode {
@@ -170,19 +166,19 @@ func (i *Image) DrawImage(img *Image, sx0, sy0, sx1, sy1 int, geom *affine.GeoM,
 	if img.stale || img.volatile || i.screen || !IsRestoringEnabled() {
 		i.makeStale()
 	} else {
-		i.appendDrawImageHistory(img, vs, colorm, mode, filter)
+		i.appendDrawImageHistory(img, vs, mode, filter)
 	}
-	i.image.DrawImage(img.image, vs, colorm, mode, filter)
+	i.image.DrawImage(img.image, vs, mode, filter)
 }
 
 // appendDrawImageHistory appends a draw-image history item to the image.
-func (i *Image) appendDrawImageHistory(image *Image, vertices []float32, colorm *affine.ColorM, mode opengl.CompositeMode, filter graphics.Filter) {
+func (i *Image) appendDrawImageHistory(image *Image, vertices []float32, mode opengl.CompositeMode, filter graphics.Filter) {
 	if i.stale || i.volatile || i.screen {
 		return
 	}
 	if len(i.drawImageHistory) > 0 {
 		last := i.drawImageHistory[len(i.drawImageHistory)-1]
-		if last.canMerge(image, colorm, mode, filter) {
+		if last.canMerge(image, mode, filter) {
 			last.vertices = append(last.vertices, vertices)
 			return
 		}
@@ -197,7 +193,6 @@ func (i *Image) appendDrawImageHistory(image *Image, vertices []float32, colorm 
 	item := &drawImageHistoryItem{
 		image:    image,
 		vertices: [][]float32{vertices},
-		colorm:   colorm,
 		mode:     mode,
 		filter:   filter,
 	}
@@ -333,7 +328,7 @@ func (i *Image) restore() error {
 		for _, v := range c.vertices {
 			vs = append(vs, v...)
 		}
-		gimg.DrawImage(c.image.image, vs, c.colorm, c.mode, c.filter)
+		gimg.DrawImage(c.image.image, vs, c.mode, c.filter)
 	}
 	i.image = gimg
 

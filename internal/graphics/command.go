@@ -17,7 +17,6 @@ package graphics
 import (
 	"fmt"
 
-	"github.com/hajimehoshi/ebiten/internal/affine"
 	emath "github.com/hajimehoshi/ebiten/internal/math"
 	"github.com/hajimehoshi/ebiten/internal/opengl"
 )
@@ -32,7 +31,7 @@ type command interface {
 	Exec(indexOffsetInBytes int) error
 	NumVertices() int
 	AddNumVertices(n int)
-	CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool
+	CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool
 }
 
 // commandQueue is a command queue for drawing commands.
@@ -67,12 +66,12 @@ func (q *commandQueue) appendVertices(vertices []float32) {
 }
 
 // EnqueueDrawImageCommand enqueues a drawing-image command.
-func (q *commandQueue) EnqueueDrawImageCommand(dst, src *Image, vertices []float32, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) {
+func (q *commandQueue) EnqueueDrawImageCommand(dst, src *Image, vertices []float32, mode opengl.CompositeMode, filter Filter) {
 	// Avoid defer for performance
 	q.appendVertices(vertices)
 	if 0 < len(q.commands) {
 		last := q.commands[len(q.commands)-1]
-		if last.CanMerge(dst, src, color, mode, filter) {
+		if last.CanMerge(dst, src, mode, filter) {
 			last.AddNumVertices(len(vertices))
 			return
 		}
@@ -81,7 +80,6 @@ func (q *commandQueue) EnqueueDrawImageCommand(dst, src *Image, vertices []float
 		dst:       dst,
 		src:       src,
 		nvertices: len(vertices),
-		color:     color,
 		mode:      mode,
 		filter:    filter,
 	}
@@ -177,7 +175,6 @@ type drawImageCommand struct {
 	dst       *Image
 	src       *Image
 	nvertices int
-	color     *affine.ColorM
 	mode      opengl.CompositeMode
 	filter    Filter
 }
@@ -202,7 +199,7 @@ func (c *drawImageCommand) Exec(indexOffsetInBytes int) error {
 		return nil
 	}
 	proj := f.projectionMatrix()
-	theOpenGLState.useProgram(proj, c.src.texture.native, c.dst, c.src, c.color, c.filter)
+	theOpenGLState.useProgram(proj, c.src.texture.native, c.dst, c.src, c.filter)
 	// TODO: We should call glBindBuffer here?
 	// The buffer is already bound at begin() but it is counterintuitive.
 	opengl.GetContext().DrawElements(opengl.Triangles, 6*n, indexOffsetInBytes)
@@ -238,14 +235,11 @@ func (c *drawImageCommand) split(quadsNum int) [2]*drawImageCommand {
 
 // CanMerge returns a boolean value indicating whether the other drawImageCommand can be merged
 // with the drawImageCommand c.
-func (c *drawImageCommand) CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool {
+func (c *drawImageCommand) CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool {
 	if c.dst != dst {
 		return false
 	}
 	if c.src != src {
-		return false
-	}
-	if !c.color.Equals(color) {
 		return false
 	}
 	if c.mode != mode {
@@ -295,7 +289,7 @@ func (c *replacePixelsCommand) NumVertices() int {
 func (c *replacePixelsCommand) AddNumVertices(n int) {
 }
 
-func (c *replacePixelsCommand) CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool {
+func (c *replacePixelsCommand) CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool {
 	return false
 }
 
@@ -323,7 +317,7 @@ func (c *disposeCommand) NumVertices() int {
 func (c *disposeCommand) AddNumVertices(n int) {
 }
 
-func (c *disposeCommand) CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool {
+func (c *disposeCommand) CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool {
 	return false
 }
 
@@ -372,7 +366,7 @@ func (c *newImageCommand) NumVertices() int {
 func (c *newImageCommand) AddNumVertices(n int) {
 }
 
-func (c *newImageCommand) CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool {
+func (c *newImageCommand) CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool {
 	return false
 }
 
@@ -400,6 +394,6 @@ func (c *newScreenFramebufferImageCommand) NumVertices() int {
 func (c *newScreenFramebufferImageCommand) AddNumVertices(n int) {
 }
 
-func (c *newScreenFramebufferImageCommand) CanMerge(dst, src *Image, color *affine.ColorM, mode opengl.CompositeMode, filter Filter) bool {
+func (c *newScreenFramebufferImageCommand) CanMerge(dst, src *Image, mode opengl.CompositeMode, filter Filter) bool {
 	return false
 }
