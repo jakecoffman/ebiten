@@ -30,7 +30,7 @@ type verticesBackend struct {
 }
 
 func (v *verticesBackend) get() []float32 {
-	const num = 256
+	const num = 1024
 	if v.backend == nil {
 		v.backend = make([]float32, quadFloat32Num*num)
 	}
