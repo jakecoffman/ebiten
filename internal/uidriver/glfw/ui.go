@@ -590,24 +590,11 @@ func (u *UserInterface) Run(uicontext driver.UIContext) error {
 	u.t = thread.New()
 	u.Graphics().SetThread(u.t)
 
-	ch := make(chan error, 1)
-	go func() {
-		defer func() {
-			_ = u.t.Call(func() error {
-				return thread.BreakLoop
-			})
-		}()
-
-		defer close(ch)
-		if err := u.run(); err != nil {
-			ch <- err
-		}
-	}()
-
 	u.setRunning(true)
-	u.t.Loop()
+	err := u.run()
 	u.setRunning(false)
-	return <-ch
+
+	return err
 }
 
 func (u *UserInterface) RunWithoutMainLoop(context driver.UIContext) {
