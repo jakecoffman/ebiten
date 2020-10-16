@@ -20,18 +20,13 @@ import (
 
 // Thread represents an OS thread.
 type Thread struct {
-	funcs   chan func() error
-	results chan error
 }
 
 // New creates a new thread.
 //
 // It is assumed that the OS thread is fixed by runtime.LockOSThread when New is called.
 func New() *Thread {
-	return &Thread{
-		funcs:   make(chan func() error),
-		results: make(chan error),
-	}
+	return &Thread{}
 }
 
 // BreakLoop represents an termination of the loop.
@@ -41,14 +36,7 @@ var BreakLoop = errors.New("break loop")
 //
 // Loop must be called on the thread.
 func (t *Thread) Loop() {
-	for f := range t.funcs {
-		err := f()
-		if err == BreakLoop {
-			t.results <- nil
-			return
-		}
-		t.results <- err
-	}
+
 }
 
 // Call calls f on the thread.
@@ -59,6 +47,5 @@ func (t *Thread) Loop() {
 //
 // Call blocks if Loop is not called.
 func (t *Thread) Call(f func() error) error {
-	t.funcs <- f
-	return <-t.results
+	return f()
 }
